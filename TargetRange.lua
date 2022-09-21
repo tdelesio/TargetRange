@@ -1,6 +1,10 @@
 local Version = 1.0
 
 TargetRange = {}
+if not EnemyTarget then EnemyTarget = {} end
+if not EnemyTarget.LatestGuardName then EnemyTarget.LatestGuardName = nil end
+if not EnemyTarget.GuarderData then EnemyTarget.GuarderData = {Name=L"",IsGuarding = false,XGuard = false,ID=0,Career=0,distance= -1,XGuard=false} end
+
 
 local SEND_BEGIN = 1
 local SEND_FINISH = 2
