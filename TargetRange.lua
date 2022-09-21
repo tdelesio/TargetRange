@@ -5,6 +5,15 @@ if not EnemyTarget then EnemyTarget = {} end
 if not EnemyTarget.LatestGuardName then EnemyTarget.LatestGuardName = nil end
 if not EnemyTarget.GuarderData then EnemyTarget.GuarderData = {Name=L"",IsGuarding = false,XGuard = false,ID=0,Career=0,distance= -1,XGuard=false} end
 
+local MAX_MAP_POINTS = 511
+local DISTANCE_FIX_COEFFICIENT = 1 / 1.06
+local MapPointTypeFilter = {
+	[SystemData.MapPips.PLAYER] = true,
+	[SystemData.MapPips.GROUP_MEMBER] = true,
+	[SystemData.MapPips.WARBAND_MEMBER] = true,
+	[SystemData.MapPips.DESTRUCTION_ARMY] = true,
+	[SystemData.MapPips.ORDER_ARMY] = true
+}
 
 local SEND_BEGIN = 1
 local SEND_FINISH = 2
