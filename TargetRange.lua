@@ -163,3 +163,73 @@ end
 function TargetRange.LG_Update(state,GuardedName,GuardedID)
 TargetRange.UpdateStateMachine()
 end
+
+--Function for getting Player Information from name in the party / warband / scenario
+--State Returns: 1)- Player Object ID , 2)- Player Career Line , 3)- Player Data table
+function EnemyTarget.GetIdFromName(GName,state)
+local Gname = GName
+local state = tonumber(state)
+
+	--get Warband Data
+	if IsWarBandActive() and (not GameData.Player.isInScenario) and (not GameData.Player.isInSiege) then
+	local warband = PartyUtils.GetWarbandData()
+		for _, party in ipairs( warband ) do
+			for _, member in ipairs( party.players ) do
+				if tostring(Gname) == tostring(LibEnemyTarget.FixString (member.name)) then
+					if state == 1 then
+						if member.name ~= L"" then
+							return (member.worldObjNum)
+						else
+							break
+						end
+					elseif state == 2 then
+						if member.name ~= L"" then
+							return (member.careerLine)
+						else
+							break
+						end
+					elseif state == 3 then
+						if member.name ~= L"" then
+							if member ~= nil then
+							return (member)
+							else
+							return {}
+							end
+						else
+							break
+						end
+					end
+				end
+			end
+		end
+	end
+
+	--get Party/Scenario data
+	if ((not IsWarBandActive() and PartyUtils.IsPartyActive()) or (GameData.Player.isInScenario) or (GameData.Player.isInSiege))then
+	local groupData=PartyUtils.GetPartyData()
+		for index,memberData in ipairs(groupData) do
+			if tostring(Gname) == tostring(LibEnemyTarget.FixString(memberData.name)) then
+				if state == 1 then
+					if memberData.name ~= L"" then
+						return (memberData.worldObjNum)
+					else
+						break
+					end
+				elseif state == 2 then
+					if memberData.name ~= L"" then
+						return (memberData.careerLine)
+					else
+						break
+					end
+				elseif state == 3 then
+					if memberData.name ~= L"" then
+						return (memberData)
+					else
+						break
+					end
+				end
+			end
+		end
+	end
+return 0
+end
