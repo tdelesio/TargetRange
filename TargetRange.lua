@@ -57,27 +57,6 @@ function TargetRange.StartMachine()
 	TimedStateMachineManager.AddStateMachine( TargetRange.stateMachineName, stateMachine )
 end
 
-function TargetRange.ComparePlayers( index,tablename )
-    table.sort(index, function (a,b)
-    return (a.distance < b.distance)
-	end)
-
-end
-
-function TargetRange.SortPlayers(array)
-if array == nil then return end
-	local Index = 0
-	local sortedPlayers = {};
-	for k, v in pairs(array)
-	do
-		table.insert(sortedPlayers,v);
-		Index = Index+1
-	end
-	if Index > 1 then
-	table.sort(sortedPlayers, function(a,b) return a.distance < b.distance end);
-	end
-	return sortedPlayers;
-end
 
 function TargetRange.UpdateTargets()
 for i=1,5 do
@@ -86,21 +65,19 @@ WindowSetScale("TargetRange_Window"..i,(WindowGetScale("TargetRange_Window0")*0.
 end
 
 local eid = TargetInfo:UnitEntityId("selfhostiletarget")
-
+print(eid)
 --If there is an enemy target, then find the distance
 if (eid ~= nil) then
 	for i = 1, MAX_MAP_POINTS do
 		local mpd = GetMapPointData ("EA_Window_OverheadMapMapDisplay", i)
+		print("mpd")
+		print(mpd)
 		if (not mpd or not mpd.name) then continue end
 		--or not MapPointTypeFilter[mpd.pointType]
-		local name = EnemyTarget.FixString((mpd.name))
-		if name == EnemyTarget.TargetData.Name then
-			EnemyTarget.TargetData.distance = math.floor (mpd.distance * DISTANCE_FIX_COEFFICIENT)
-			EnemyTarget.TargetData.ID = EnemyTarget.GetIdFromName(name,1)
-			EnemyTarget.TargetData.career = EnemyTarget.GetIdFromName(name,2)
-			EnemyTarget.TargetData.Info = EnemyTarget.GetIdFromName(name,3)
-			return
-		end
+
+		EnemyTarget.TargetData.distance = math.floor (mpd.distance * DISTANCE_FIX_COEFFICIENT)
+		return
+
 	end
 
 	WindowSetShowing("TargetRange_Window"..Index,true)
@@ -150,86 +127,89 @@ end
 return
 end
 
---Returns a corrected formated player name
-function EnemyTarget.FixString (str)
-	if (str == nil) then return nil end
-	local str = str
-	local pos = str:find (L"^", 1, true)
-	if (pos) then str = str:sub (1, pos - 1) end
-	return str
-end
 
 
 function TargetRange.LG_Update(state,GuardedName,GuardedID)
 TargetRange.UpdateStateMachine()
 end
 
---Function for getting Player Information from name in the party / warband / scenario
---State Returns: 1)- Player Object ID , 2)- Player Career Line , 3)- Player Data table
-function EnemyTarget.GetIdFromName(GName,state)
-local Gname = GName
-local state = tonumber(state)
+local function print(text)
+    ChatWindow.Print(towstring(tostring(text)), ChatSettings.Channels[SystemData.ChatLogFilters.SAY].id);
+end
 
-	--get Warband Data
-	if IsWarBandActive() and (not GameData.Player.isInScenario) and (not GameData.Player.isInSiege) then
-	local warband = PartyUtils.GetWarbandData()
-		for _, party in ipairs( warband ) do
-			for _, member in ipairs( party.players ) do
-				if tostring(Gname) == tostring(LibEnemyTarget.FixString (member.name)) then
-					if state == 1 then
-						if member.name ~= L"" then
-							return (member.worldObjNum)
-						else
-							break
-						end
-					elseif state == 2 then
-						if member.name ~= L"" then
-							return (member.careerLine)
-						else
-							break
-						end
-					elseif state == 3 then
-						if member.name ~= L"" then
-							if member ~= nil then
-							return (member)
-							else
-							return {}
-							end
-						else
-							break
-						end
-					end
-				end
-			end
-		end
-	end
+local function mysort(alpha, bravo)
+    if type(alpha) ~= type(bravo) then
+        return type(alpha) < type(bravo)
+    end
+    if alpha == bravo then
+        return false
+    end
+    if type(alpha) == "string" or type(alpha) == "wstring" then
+        return alpha:lower() < bravo:lower()
+    end
+    if type(alpha) == "number" then
+        return alpha < bravo
+    end
+    return false
+end
 
-	--get Party/Scenario data
-	if ((not IsWarBandActive() and PartyUtils.IsPartyActive()) or (GameData.Player.isInScenario) or (GameData.Player.isInSiege))then
-	local groupData=PartyUtils.GetPartyData()
-		for index,memberData in ipairs(groupData) do
-			if tostring(Gname) == tostring(LibEnemyTarget.FixString(memberData.name)) then
-				if state == 1 then
-					if memberData.name ~= L"" then
-						return (memberData.worldObjNum)
-					else
-						break
-					end
-				elseif state == 2 then
-					if memberData.name ~= L"" then
-						return (memberData.careerLine)
-					else
-						break
-					end
-				elseif state == 3 then
-					if memberData.name ~= L"" then
-						return (memberData)
-					else
-						break
-					end
-				end
-			end
-		end
-	end
-return 0
+local recursions = {}
+local function better_toString(data, depth)
+    if type(data) == "string" then
+        return ("%q"):format(data)
+    elseif type(data) == "wstring" then
+        return ("L%q"):format(WStringToString(data))
+    elseif type(data) ~= "table" then
+        return ("%s"):format(tostring(data))
+    else
+        if recursions[data] then
+            return "{<recursive table>}"
+        end
+        recursions[data] = true
+        if next(data) == nil then
+            return "{}"
+        elseif next(data, next(data)) == nil then
+            return "{ [" .. better_toString(next(data), depth) .. "] = " .. better_toString(select(2, next(data)), depth) .. " }"
+        else
+            local t = {}
+            t[#t+1] = "{\n"
+            local keys = {}
+            for k in pairs(data) do
+                keys[#keys+1] = k
+            end
+            table.sort(keys, mysort)
+            for _, k in ipairs(keys) do
+                local v = data[k]
+                for i = 1, depth do
+                    t[#t+1] = "    "
+                end
+                t[#t+1] = "["
+                t[#t+1] = better_toString(k, depth+1)
+                t[#t+1] = "] = "
+                t[#t+1] = better_toString(v, depth+1)
+                t[#t+1] = ",\n"
+            end
+
+            for i = 1, depth do
+                t[#t+1] = "    "
+            end
+            t[#t+1] = "}"
+            return table.concat(t)
+        end
+    end
+end
+
+function pprint(...)
+    local n = select('#', ...)
+    local t = {n, ': '}
+    for i = 1, n do
+        if i > 1 then
+            t[#t+1] = ", "
+        end
+        t[#t+1] = better_toString((select(i, ...)), 0)
+    end
+    for k in pairs(recursions) do
+        recursions[k] = nil
+    end
+    print(table.concat(t))
 end
