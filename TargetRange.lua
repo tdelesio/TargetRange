@@ -65,13 +65,15 @@ WindowSetScale("TargetRange_Window"..i,(WindowGetScale("TargetRange_Window0")*0.
 end
 
 local eid = TargetInfo:UnitEntityId("selfhostiletarget")
-print(eid)
+EA_ChatWindow.Print(towstring("Hello, World!"))
+EA_ChatWindow.Print(eid)
 --If there is an enemy target, then find the distance
 if (eid ~= nil) then
 	for i = 1, MAX_MAP_POINTS do
 		local mpd = GetMapPointData ("EA_Window_OverheadMapMapDisplay", i)
 		print("mpd")
-		print(mpd)
+		EA_ChatWindow.Print(towstring("mpd"))
+		EA_ChatWindow.Print(mpd
 		if (not mpd or not mpd.name) then continue end
 		--or not MapPointTypeFilter[mpd.pointType]
 
@@ -131,85 +133,4 @@ end
 
 function TargetRange.LG_Update(state,GuardedName,GuardedID)
 TargetRange.UpdateStateMachine()
-end
-
-local function print(text)
-    ChatWindow.Print(towstring(tostring(text)), ChatSettings.Channels[SystemData.ChatLogFilters.SAY].id);
-end
-
-local function mysort(alpha, bravo)
-    if type(alpha) ~= type(bravo) then
-        return type(alpha) < type(bravo)
-    end
-    if alpha == bravo then
-        return false
-    end
-    if type(alpha) == "string" or type(alpha) == "wstring" then
-        return alpha:lower() < bravo:lower()
-    end
-    if type(alpha) == "number" then
-        return alpha < bravo
-    end
-    return false
-end
-
-local recursions = {}
-local function better_toString(data, depth)
-    if type(data) == "string" then
-        return ("%q"):format(data)
-    elseif type(data) == "wstring" then
-        return ("L%q"):format(WStringToString(data))
-    elseif type(data) ~= "table" then
-        return ("%s"):format(tostring(data))
-    else
-        if recursions[data] then
-            return "{<recursive table>}"
-        end
-        recursions[data] = true
-        if next(data) == nil then
-            return "{}"
-        elseif next(data, next(data)) == nil then
-            return "{ [" .. better_toString(next(data), depth) .. "] = " .. better_toString(select(2, next(data)), depth) .. " }"
-        else
-            local t = {}
-            t[#t+1] = "{\n"
-            local keys = {}
-            for k in pairs(data) do
-                keys[#keys+1] = k
-            end
-            table.sort(keys, mysort)
-            for _, k in ipairs(keys) do
-                local v = data[k]
-                for i = 1, depth do
-                    t[#t+1] = "    "
-                end
-                t[#t+1] = "["
-                t[#t+1] = better_toString(k, depth+1)
-                t[#t+1] = "] = "
-                t[#t+1] = better_toString(v, depth+1)
-                t[#t+1] = ",\n"
-            end
-
-            for i = 1, depth do
-                t[#t+1] = "    "
-            end
-            t[#t+1] = "}"
-            return table.concat(t)
-        end
-    end
-end
-
-function pprint(...)
-    local n = select('#', ...)
-    local t = {n, ': '}
-    for i = 1, n do
-        if i > 1 then
-            t[#t+1] = ", "
-        end
-        t[#t+1] = better_toString((select(i, ...)), 0)
-    end
-    for k in pairs(recursions) do
-        recursions[k] = nil
-    end
-    print(table.concat(t))
 end
